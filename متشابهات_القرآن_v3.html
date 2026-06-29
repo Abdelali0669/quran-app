@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
+<title>متشابهات القرآن الكريم</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Tahoma,sans-serif;background:#eef2ee;direction:rtl;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{background:linear-gradient(135deg,#1a4a2e,#2d6a4a);padding:10px 14px;border-bottom:3px solid #b8860b;flex-shrink:0}
+.app-title{font-size:1.2rem;font-weight:700;color:#d4a843;text-align:center;margin-bottom:2px}
+.app-sub{font-size:.7rem;color:rgba(255,255,255,.65);text-align:center;margin-bottom:9px}
+.tabs{display:flex;gap:5px}
+.tab{flex:1;padding:8px;border:none;border-radius:8px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:.83rem;cursor:pointer;font-family:Tahoma,sans-serif}
+.tab.active{background:#b8860b;color:white;font-weight:700}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.panel{display:none;flex:1;flex-direction:column;min-height:0}
+.panel.active{display:flex}
+.index-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
+.index-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.scard{background:white;border-radius:11px;padding:11px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);border:2px solid transparent;-webkit-tap-highlight-color:transparent}
+.scard:active{border-color:#b8860b;transform:scale(.95)}
+.snum{display:block;width:26px;height:26px;line-height:26px;border-radius:50%;background:#1a4a2e;color:#d4a843;font-size:.7rem;font-weight:700;margin:0 auto 5px}
+.sname{font-size:.9rem;font-weight:700;color:#1a4a2e}
+.reader-top{background:white;border-bottom:1px solid #ddd;flex-shrink:0}
+.back-row{padding:6px 12px}
+.back-btn{background:none;border:none;color:#1a4a2e;font-size:.85rem;cursor:pointer;font-weight:700;font-family:Tahoma,sans-serif}
+.surah-bar{background:#1a4a2e;color:#d4a843;text-align:center;padding:7px;font-weight:700;font-size:1rem}
+.nav-row{display:flex;align-items:center;padding:6px 10px;gap:8px}
+.nbtn{background:#1a4a2e;color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:1.1rem;flex-shrink:0;min-width:48px}
+.nbtn:disabled{background:#bbb}
+.pinfo{flex:1;text-align:center;font-size:.82rem;color:#444;font-weight:600}
+.canvas-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#555;min-height:0;display:flex;flex-direction:column}
+#pdf-canvas{display:block;width:100%;height:auto}
+.status-box{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;background:#f5f5f5}
+.spinner{width:46px;height:46px;border:4px solid #ddd;border-top-color:#1a4a2e;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.retry-btn{margin-top:14px;padding:9px 22px;background:#1a4a2e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-family:Tahoma,sans-serif}
+.surah-strip{display:flex;gap:6px;padding:8px 10px;overflow-x:auto;background:#f5f5f5;border-top:1px solid #ddd;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.sthumb{flex-shrink:0;padding:5px 11px;border-radius:7px;background:white;border:1px solid #ccc;font-size:.75rem;cursor:pointer;color:#1a4a2e;font-weight:600;white-space:nowrap}
+.sthumb:active{background:#1a4a2e;color:white}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="app-title">متشابهات القرآن الكريم</div>
+  <div class="app-sub">٨٠ سورة · ٢٩٠ صفحة · النص الأصلي</div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('index')">📋 الفهرس</button>
+    <button class="tab" onclick="openReader()">📖 القراءة</button>
+  </div>
+</div>
+<div class="content">
+  <div class="panel active" id="panel-index">
+    <div class="index-scroll">
+      <div class="index-grid" id="indexGrid"></div>
+    </div>
+  </div>
+  <div class="panel" id="panel-reader">
+    <div class="reader-top">
+      <div class="back-row"><button class="back-btn" onclick="showTab('index')">↩ الفهرس</button></div>
+      <div class="surah-bar" id="surahBar">متشابهات القرآن</div>
+      <div class="nav-row">
+        <button class="nbtn" id="prevBtn" onclick="changePage(-1)">◀</button>
+        <div class="pinfo" id="pinfo">—</div>
+        <button class="nbtn" id="nextBtn" onclick="changePage(1)">▶</button>
+      </div>
+    </div>
+    <div class="canvas-area" id="canvasArea">
+      <div class="status-box" id="loadBox">
+        <div class="spinner"></div>
+        <div style="color:#555;font-size:.95rem">جاري تحميل الكتاب...</div>
+        <div style="color:#888;font-size:.78rem;margin-top:6px">يتطلب اتصالاً بالإنترنت</div>
+      </div>
+      <canvas id="pdf-canvas" style="display:none"></canvas>
+      <div class="status-box" id="errBox" style="display:none">
+        <div style="font-size:2.5rem">⚠️</div>
+        <div style="color:#c0392b;font-size:.95rem;margin:8px 0">تعذّر تحميل الكتاب</div>
+        <div style="color:#888;font-size:.78rem" id="errDetail">تأكد من اتصالك بالإنترنت</div>
+        <button class="retry-btn" onclick="loadPDF()">🔄 إعادة المحاولة</button>
+      </div>
+    </div>
+    <div class="surah-strip" id="surahStrip"></div>
+  </div>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const SURAHS=[{"id": 1, "name": "البقرة", "page": 2}, {"id": 2, "name": "آل عمران", "page": 13}, {"id": 3, "name": "النساء", "page": 22}, {"id": 4, "name": "المائدة", "page": 29}, {"id": 5, "name": "الأنعام", "page": 35}, {"id": 6, "name": "الأعراف", "page": 44}, {"id": 7, "name": "الأنفال", "page": 55}, {"id": 8, "name": "التوبة", "page": 59}, {"id": 9, "name": "يونس", "page": 69}, {"id": 10, "name": "هود", "page": 74}, {"id": 11, "name": "يوسف", "page": 82}, {"id": 12, "name": "الرعد", "page": 90}, {"id": 13, "name": "إبراهيم", "page": 92}, {"id": 14, "name": "الحجر", "page": 94}, {"id": 15, "name": "النحل", "page": 98}, {"id": 16, "name": "الإسراء", "page": 106}, {"id": 17, "name": "الكهف", "page": 110}, {"id": 18, "name": "مريم", "page": 116}, {"id": 19, "name": "طه", "page": 122}, {"id": 20, "name": "الأنبياء", "page": 127}, {"id": 21, "name": "الحج", "page": 134}, {"id": 22, "name": "المؤمنون", "page": 138}, {"id": 23, "name": "النور", "page": 145}, {"id": 24, "name": "الفرقان", "page": 152}, {"id": 25, "name": "الشعراء", "page": 157}, {"id": 26, "name": "النمل", "page": 166}, {"id": 27, "name": "القصص", "page": 170}, {"id": 28, "name": "العنكبوت", "page": 174}, {"id": 29, "name": "الروم", "page": 178}, {"id": 30, "name": "لقمان", "page": 181}, {"id": 31, "name": "السجدة", "page": 185}, {"id": 32, "name": "الأحزاب", "page": 189}, {"id": 33, "name": "سبأ", "page": 193}, {"id": 34, "name": "فاطر", "page": 197}, {"id": 35, "name": "يس", "page": 200}, {"id": 36, "name": "الصافات", "page": 204}, {"id": 37, "name": "ص", "page": 208}, {"id": 38, "name": "الزمر", "page": 211}, {"id": 39, "name": "غافر", "page": 215}, {"id": 40, "name": "فصلت", "page": 222}, {"id": 41, "name": "الشورى", "page": 225}, {"id": 42, "name": "الزخرف", "page": 229}, {"id": 43, "name": "الدخان", "page": 234}, {"id": 44, "name": "الجاثية", "page": 239}, {"id": 45, "name": "الأحقاف", "page": 243}, {"id": 46, "name": "محمد", "page": 248}, {"id": 47, "name": "الفتح", "page": 253}, {"id": 48, "name": "الحجرات", "page": 257}, {"id": 49, "name": "ق", "page": 260}, {"id": 50, "name": "الذاريات", "page": 263}, {"id": 51, "name": "الطور", "page": 266}, {"id": 52, "name": "النجم", "page": 269}, {"id": 53, "name": "القمر", "page": 271}, {"id": 54, "name": "الرحمن", "page": 274}, {"id": 55, "name": "الواقعة", "page": 276}, {"id": 56, "name": "الحديد", "page": 278}, {"id": 57, "name": "المجادلة", "page": 280}, {"id": 58, "name": "الحشر", "page": 282}, {"id": 59, "name": "الممتحنة", "page": 284}, {"id": 60, "name": "الصف", "page": 285}, {"id": 61, "name": "الجمعة", "page": 286}, {"id": 62, "name": "المنافقون", "page": 287}, {"id": 63, "name": "التغابن", "page": 288}, {"id": 64, "name": "الطلاق", "page": 289}, {"id": 65, "name": "التحريم", "page": 290}, {"id": 66, "name": "الملك", "page": 291}, {"id": 67, "name": "القلم", "page": 292}, {"id": 68, "name": "الحاقة", "page": 293}, {"id": 69, "name": "المعارج", "page": 294}, {"id": 70, "name": "نوح", "page": 295}, {"id": 71, "name": "الجن", "page": 296}, {"id": 72, "name": "المزمل", "page": 297}, {"id": 73, "name": "المدثر", "page": 298}, {"id": 74, "name": "القيامة", "page": 299}, {"id": 75, "name": "الإنسان", "page": 300}, {"id": 76, "name": "المرسلات", "page": 301}, {"id": 77, "name": "النبأ", "page": 302}, {"id": 78, "name": "النازعات", "page": 303}, {"id": 79, "name": "عبس", "page": 304}];
+// Try both URLs
+const PDF_URLS=[
+  'https://raw.githubusercontent.com/Abdelali0669/quran-app/main/%D9%85%D8%AA%D8%B4%D8%A7%D8%A8%D9%87%D8%A7%D8%AA%20%D8%A7%D9%84%D9%82%D8%B1%D8%A1%D8%A7%D9%86.pdf',
+  'https://raw.githubusercontent.com/Abdelali0669/quran-app/main/%D9%85%D8%AA%D8%B4%D8%A7%D8%A8%D9%87%D8%A7%D8%AA%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86.pdf'
+];
+let pdf=null,curPage=1,totalP=290,busy=false,queued=null;
+
+function buildIndex(){
+  document.getElementById('indexGrid').innerHTML=SURAHS.map((s,i)=>`<div class="scard" onclick="openSurah(${i})"><span class="snum">${s.id}</span><span class="sname">${s.name}</span></div>`).join('');
+  document.getElementById('surahStrip').innerHTML=SURAHS.map((s,i)=>`<div class="sthumb" onclick="openSurah(${i})">${s.name}</div>`).join('');
+}
+
+async function loadPDF(){
+  show('loadBox');hide('errBox');hide('pdf-canvas');
+  for(const url of PDF_URLS){
+    try{
+      document.getElementById('loadBox').innerHTML='<div class="spinner"></div><div style="color:#555">جاري التحميل...</div><div style="color:#888;font-size:.75rem;margin-top:6px;padding:0 20px;word-break:break-all">'+url+'</div>';
+      pdf=await pdfjsLib.getDocument({url,cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',cMapPacked:true}).promise;
+      totalP=pdf.numPages;
+      hide('loadBox');show('pdf-canvas');
+      renderPage(curPage);
+      return;
+    }catch(e){console.error('Failed:',url,e);pdf=null;}
+  }
+  hide('loadBox');
+  document.getElementById('errDetail').textContent='تعذّر العثور على ملف PDF على GitHub';
+  show('errBox');
+}
+
+async function renderPage(n){
+  if(!pdf||busy){if(busy)queued=n;return;}
+  busy=true;curPage=n;
+  document.getElementById('pinfo').textContent=`صفحة ${n} من ${totalP}`;
+  document.getElementById('prevBtn').disabled=n<=1;
+  document.getElementById('nextBtn').disabled=n>=totalP;
+  let nm='';for(const s of SURAHS){if(s.page<=n)nm=s.name;}
+  if(nm)document.getElementById('surahBar').textContent='سورة '+nm;
+  try{
+    const page=await pdf.getPage(n);
+    const canvas=document.getElementById('pdf-canvas');
+    const ctx=canvas.getContext('2d');
+    const w=document.getElementById('canvasArea').clientWidth||window.innerWidth;
+    const vp=page.getViewport({scale:1});
+    const svp=page.getViewport({scale:w/vp.width});
+    canvas.width=svp.width;canvas.height=svp.height;
+    await page.render({canvasContext:ctx,viewport:svp}).promise;
+  }catch(e){console.error(e);}
+  busy=false;
+  if(queued!==null){const q=queued;queued=null;renderPage(q);}
+}
+
+function changePage(d){const n=curPage+d;if(n>=1&&n<=totalP)renderPage(n);}
+function openSurah(i){const s=SURAHS[i];document.getElementById('surahBar').textContent='سورة '+s.name;showTab('reader');if(!pdf)loadPDF().then(()=>renderPage(s.page));else renderPage(s.page);}
+function openReader(){showTab('reader');if(!pdf)loadPDF();}
+function showTab(n){['index','reader'].forEach(x=>document.getElementById('panel-'+x).classList.toggle('active',x===n));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&n==='index')||(i===1&&n==='reader')));}
+function show(id){const e=document.getElementById(id);if(e)e.style.display='';}
+function hide(id){const e=document.getElementById(id);if(e)e.style.display='none';}
+let tx=0;
+const ca=document.getElementById('canvasArea');
+ca.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+ca.addEventListener('touchend',e=>{if(Math.abs(tx-e.changedTouches[0].clientX)>60)changePage(tx>e.changedTouches[0].clientX?1:-1);},{passive:true});
+buildIndex();
+</script>
+</body>
+</html>
